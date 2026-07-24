@@ -20,7 +20,6 @@
     .choices-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .choices-header { font-size: 0.85rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    /* Clear Inputs Button */
     .clear-btn { background: none; border: none; color: #ef4444; font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: background 0.2s; }
     .clear-btn:hover { background: #fef2f2; text-decoration: underline; }
 
@@ -134,7 +133,7 @@
   </div>
 
   <script>
-    // Build 5 Input Rows on Load
+    // Generate 5 Input Rows
     const inputsContainer = document.getElementById('inputs-container');
     for (let i = 1; i <= 5; i++) {
       inputsContainer.innerHTML += `
@@ -145,7 +144,7 @@
       `;
     }
 
-    let rawChoices = []; // Preserves choices across reruns
+    let rawChoices = [];
     let remainingChoices = [];
     let currentPair = [];
     let totalMatches = 0;
@@ -159,7 +158,7 @@
       return `https://api.microlink.io/?url=${encodeURIComponent(url)}&embed=screenshot.url`;
     }
 
-    // Auto-detect URL Parameters on Load
+    // Auto-detect URL Parameters on Page Load
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const dataParam = urlParams.get('data');
@@ -170,7 +169,7 @@
           decisionQuestion = decodedData.q || "Which option do you prefer?";
           rawChoices = decodedData.c || [];
 
-          // Populate inputs so user can see them if they edit
+          // Pre-fill inputs
           document.getElementById('question-input').value = decisionQuestion;
           rawChoices.forEach((choice, idx) => {
             if (idx < 5) {
@@ -179,6 +178,7 @@
             }
           });
 
+          // Jump directly to match screen
           if (rawChoices.length >= 2) {
             remainingChoices = [...rawChoices];
             totalMatches = remainingChoices.length - 1;
@@ -217,6 +217,7 @@
       return { q, choices };
     }
 
+    // FIXED FOR GITHUB PAGES: Encodes choices into URL parameters safely
     function copyShareableLink() {
       const { q, choices } = collectInputData();
       if (choices.length < 2) {
@@ -224,11 +225,15 @@
         return;
       }
 
+      // Encode payload to Base64
       const payload = btoa(encodeURIComponent(JSON.stringify({ q, c: choices })));
-      const shareUrl = `${window.location.origin}${window.location.pathname}?data=${payload}`;
+      
+      // Get exact base URL without query parameters
+      const baseUrl = window.location.href.split('?')[0];
+      const shareUrl = `${baseUrl}?data=${payload}`;
 
       navigator.clipboard.writeText(shareUrl).then(() => {
-        alert('Copied shareable link to clipboard! Send it to your friend.');
+        alert('Copied shareable link to clipboard! Send this exact link to your friend.');
       }).catch(err => {
         prompt('Copy this link manually:', shareUrl);
       });
@@ -308,13 +313,11 @@
       }
     }
 
-    // Go back to the input step keeping current values preserved
     function editCurrentSetup() {
       document.getElementById('result-step').classList.add('hidden');
       document.getElementById('input-step').classList.remove('hidden');
     }
 
-    // Re-run decision using preserved choices
     function restartSameTournament() {
       remainingChoices = [...rawChoices];
       totalMatches = remainingChoices.length - 1;
@@ -326,7 +329,6 @@
       loadNextMatch();
     }
 
-    // Manual Reset Function
     function clearAllInputs() {
       document.getElementById('question-input').value = '';
       for (let i = 1; i <= 5; i++) {
