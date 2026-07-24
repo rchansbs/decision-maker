@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2-Not-3 Decision Maker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #f8fafc; color: #0f172a; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+    
+    .card { background: white; padding: 32px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); width: 100%; max-width: 650px; text-align: center; }
+    
+    .active-question { font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-bottom: 6px; line-height: 1.3; }
+    p.subtitle { color: #64748b; font-size: 0.95rem; margin-bottom: 24px; }
+
+    .question-group { text-align: left; margin-bottom: 20px; }
+    .question-group label { display: block; font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .question-group input { width: 100%; padding: 12px; border: 2px solid #3b82f6; border-radius: 8px; font-size: 1rem; font-weight: 500; outline: none; }
+
+    .choices-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .choices-header { font-size: 0.85rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    /* Clear Inputs Button */
+    .clear-btn { background: none; border: none; color: #ef4444; font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: background 0.2s; }
+    .clear-btn:hover { background: #fef2f2; text-decoration: underline; }
+
+    .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .input-row input.title-input { flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+    .input-row input.url-input { flex: 2; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+
+    .btn-group { display: flex; gap: 10px; margin-top: 16px; }
+    button.primary-btn { flex: 1; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+    button.primary-btn:hover { background: #1d4ed8; }
+    button.secondary-btn { flex: 1; background: #0f172a; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+    button.secondary-btn:hover { background: #1e293b; }
+
+    .versus-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+    
+    .option-card {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .option-card:hover {
+      border-color: #2563eb;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 16px rgba(37, 99, 235, 0.15);
+    }
+
+    .thumbnail-img { width: 100%; height: 140px; object-fit: cover; background-color: #f1f5f9; border-bottom: 1px solid #e2e8f0; }
+    .card-content { padding: 16px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; }
+    .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; color: #0f172a; }
+    .external-link { display: inline-block; color: #2563eb; font-size: 0.85rem; text-decoration: none; word-break: break-all; font-weight: 600; }
+    .external-link:hover { text-decoration: underline; }
+
+    .round-indicator { display: inline-block; background: #e0e7ff; color: #3730a3; font-size: 0.8rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    
+    <!-- Step 1: Input Question and Options -->
+    <div id="input-step">
+      <h1 style="margin-bottom: 4px;">Set Up Your Decision</h1>
+      <p class="subtitle">Specify the question and list up to 5 options with links.</p>
+      
+      <div class="question-group">
+        <label for="question-input">What's the decision to make?</label>
+        <input type="text" id="question-input" placeholder="e.g., Which hotel should we book for our trip?">
+      </div>
+
+      <div class="choices-header-row">
+        <span class="choices-header">Enter Options & Links</span>
+        <button class="clear-btn" onclick="clearAllInputs()">✕ Clear All Inputs</button>
+      </div>
+      
+      <div id="inputs-container"></div>
+
+      <div class="btn-group">
+        <button class="secondary-btn" onclick="copyShareableLink()">🔗 Copy Link for Friend</button>
+        <button class="primary-btn" onclick="startTournament()">Test Decision Now</button>
+      </div>
+    </div>
+
+    <!-- Step 2: "2 Not 3" Bracket Selection -->
+    <div id="match-step" class="hidden">
+      <span class="round-indicator" id="round-label">Match 1 of 4</span>
+      <h1 class="active-question" id="display-question-match">Decision Question</h1>
+      <p class="subtitle">Click on your preferred choice to eliminate the other.</p>
+
+      <div class="versus-container">
+        <div class="option-card" onclick="selectWinner(0)">
+          <img id="img-left" src="" class="thumbnail-img" alt="Thumbnail Preview">
+          <div class="card-content">
+            <div class="card-title" id="title-left">Option A</div>
+            <a href="#" id="link-left" target="_blank" class="external-link" onclick="event.stopPropagation()">Visit Link ↗</a>
+          </div>
+        </div>
+
+        <div class="option-card" onclick="selectWinner(1)">
+          <img id="img-right" src="" class="thumbnail-img" alt="Thumbnail Preview">
+          <div class="card-content">
+            <div class="card-title" id="title-right">Option B</div>
+            <a href="#" id="link-right" target="_blank" class="external-link" onclick="event.stopPropagation()">Visit Link ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Winner Announcement -->
+    <div id="result-step" class="hidden">
+      <span class="round-indicator">Final Winner</span>
+      <p class="subtitle" style="margin-bottom: 8px;">Answer for:</p>
+      <h1 class="active-question" id="display-question-result" style="color: #475569; font-size: 1.25rem; font-weight: 600;">Decision Question</h1>
+      
+      <h1 style="font-size: 2.2rem; margin-top: 16px; color: #2563eb;" id="winner-title">Winner</h1>
+      <p style="margin: 12px 0;"><a id="winner-link" href="#" target="_blank" class="external-link" style="font-size: 1.1rem;">Visit Final Selection ↗</a></p>
+      
+      <div class="btn-group" style="margin-top: 24px;">
+        <button class="secondary-btn" onclick="editCurrentSetup()">✏ Edit Inputs</button>
+        <button class="primary-btn" onclick="restartSameTournament()">🔄 Try Decision Again</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Build 5 Input Rows on Load
+    const inputsContainer = document.getElementById('inputs-container');
+    for (let i = 1; i <= 5; i++) {
+      inputsContainer.innerHTML += `
+        <div class="input-row">
+          <input type="text" class="title-input" placeholder="Choice ${i} Title" id="title-${i}">
+          <input type="url" class="url-input" placeholder="https://example.com" id="url-${i}">
+        </div>
+      `;
+    }
+
+    let rawChoices = []; // Preserves choices across reruns
+    let remainingChoices = [];
+    let currentPair = [];
+    let totalMatches = 0;
+    let completedMatches = 0;
+    let decisionQuestion = "";
+
+    function getThumbnailUrl(url) {
+      if (!url || !url.startsWith('http')) {
+        return 'https://via.placeholder.com/400x200/e2e8f0/64748b?text=No+Link+Provided';
+      }
+      return `https://api.microlink.io/?url=${encodeURIComponent(url)}&embed=screenshot.url`;
+    }
+
+    // Auto-detect URL Parameters on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const dataParam = urlParams.get('data');
+
+      if (dataParam) {
+        try {
+          const decodedData = JSON.parse(decodeURIComponent(atob(dataParam)));
+          decisionQuestion = decodedData.q || "Which option do you prefer?";
+          rawChoices = decodedData.c || [];
+
+          // Populate inputs so user can see them if they edit
+          document.getElementById('question-input').value = decisionQuestion;
+          rawChoices.forEach((choice, idx) => {
+            if (idx < 5) {
+              document.getElementById(`title-${idx + 1}`).value = choice.title;
+              document.getElementById(`url-${idx + 1}`).value = choice.url;
+            }
+          });
+
+          if (rawChoices.length >= 2) {
+            remainingChoices = [...rawChoices];
+            totalMatches = remainingChoices.length - 1;
+            completedMatches = 0;
+
+            document.getElementById('display-question-match').textContent = decisionQuestion;
+            document.getElementById('display-question-result').textContent = `"${decisionQuestion}"`;
+
+            document.getElementById('input-step').classList.add('hidden');
+            document.getElementById('match-step').classList.remove('hidden');
+
+            loadNextMatch();
+          }
+        } catch (e) {
+          console.error("Invalid URL parameters format.", e);
+        }
+      }
+    });
+
+    function collectInputData() {
+      const questionField = document.getElementById('question-input').value.trim();
+      const q = questionField !== "" ? questionField : "Which option do you prefer?";
+      const choices = [];
+
+      for (let i = 1; i <= 5; i++) {
+        const title = document.getElementById(`title-${i}`).value.trim();
+        let url = document.getElementById(`url-${i}`).value.trim();
+
+        if (title) {
+          if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url;
+          }
+          choices.push({ title, url });
+        }
+      }
+      return { q, choices };
+    }
+
+    function copyShareableLink() {
+      const { q, choices } = collectInputData();
+      if (choices.length < 2) {
+        alert('Please enter at least 2 choices before generating a link!');
+        return;
+      }
+
+      const payload = btoa(encodeURIComponent(JSON.stringify({ q, c: choices })));
+      const shareUrl = `${window.location.origin}${window.location.pathname}?data=${payload}`;
+
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        alert('Copied shareable link to clipboard! Send it to your friend.');
+      }).catch(err => {
+        prompt('Copy this link manually:', shareUrl);
+      });
+    }
+
+    function startTournament() {
+      const { q, choices } = collectInputData();
+      decisionQuestion = q;
+      rawChoices = [...choices];
+      remainingChoices = [...choices];
+
+      if (remainingChoices.length < 2) {
+        alert('Please enter at least 2 choices with titles!');
+        return;
+      }
+
+      totalMatches = remainingChoices.length - 1;
+      completedMatches = 0;
+
+      document.getElementById('display-question-match').textContent = decisionQuestion;
+      document.getElementById('display-question-result').textContent = `"${decisionQuestion}"`;
+
+      document.getElementById('input-step').classList.add('hidden');
+      document.getElementById('match-step').classList.remove('hidden');
+
+      loadNextMatch();
+    }
+
+    function loadNextMatch() {
+      if (remainingChoices.length === 1) {
+        showWinner(remainingChoices[0]);
+        return;
+      }
+
+      currentPair = [remainingChoices.shift(), remainingChoices.shift()];
+
+      document.getElementById('round-label').textContent = `Decision ${completedMatches + 1} of ${totalMatches}`;
+
+      document.getElementById('title-left').textContent = currentPair[0].title;
+      document.getElementById('img-left').src = getThumbnailUrl(currentPair[0].url);
+      const linkLeft = document.getElementById('link-left');
+      if (currentPair[0].url) {
+        linkLeft.href = currentPair[0].url;
+        linkLeft.style.display = 'inline';
+      } else {
+        linkLeft.style.display = 'none';
+      }
+
+      document.getElementById('title-right').textContent = currentPair[1].title;
+      document.getElementById('img-right').src = getThumbnailUrl(currentPair[1].url);
+      const linkRight = document.getElementById('link-right');
+      if (currentPair[1].url) {
+        linkRight.href = currentPair[1].url;
+        linkRight.style.display = 'inline';
+      } else {
+        linkRight.style.display = 'none';
+      }
+    }
+
+    function selectWinner(selectedIndex) {
+      remainingChoices.push(currentPair[selectedIndex]);
+      completedMatches++;
+      loadNextMatch();
+    }
+
+    function showWinner(winner) {
+      document.getElementById('match-step').classList.add('hidden');
+      document.getElementById('result-step').classList.remove('hidden');
+      document.getElementById('winner-title').textContent = winner.title;
+      
+      const winnerLink = document.getElementById('winner-link');
+      if (winner.url) {
+        winnerLink.href = winner.url;
+        winnerLink.style.display = 'inline';
+      } else {
+        winnerLink.style.display = 'none';
+      }
+    }
+
+    // Go back to the input step keeping current values preserved
+    function editCurrentSetup() {
+      document.getElementById('result-step').classList.add('hidden');
+      document.getElementById('input-step').classList.remove('hidden');
+    }
+
+    // Re-run decision using preserved choices
+    function restartSameTournament() {
+      remainingChoices = [...rawChoices];
+      totalMatches = remainingChoices.length - 1;
+      completedMatches = 0;
+
+      document.getElementById('result-step').classList.add('hidden');
+      document.getElementById('match-step').classList.remove('hidden');
+
+      loadNextMatch();
+    }
+
+    // Manual Reset Function
+    function clearAllInputs() {
+      document.getElementById('question-input').value = '';
+      for (let i = 1; i <= 5; i++) {
+        document.getElementById(`title-${i}`).value = '';
+        document.getElementById(`url-${i}`).value = '';
+      }
+      rawChoices = [];
+    }
+  </script>
+
+</body>
+</html>
